@@ -9,7 +9,7 @@ function Scene() {
   this.addEntity = function(entity) {
     entity.parent = that;
     this.entities.push(entity);
-  }
+  };
 
   this.addListener('update', function(dt){
     that.entities.forEach(function(entity){
@@ -22,7 +22,7 @@ function Scene() {
       entity.render();
     });
   });
-}
+};
 
 Scene.prototype = Object.create(GameObject.prototype);
 Scene.prototype.constructor = Scene;

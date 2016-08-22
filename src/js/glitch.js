@@ -159,4 +159,4 @@ Glitch.prototype.addCollisionTest = function(target, type, callback){
     callback: callback,
     collision: false
   });
-}
+};

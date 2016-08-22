@@ -66,10 +66,10 @@ gulp.task('buildCSS', function () {
 gulp.task('buildJS', function () {
     return gulp.src(sourcePaths.js)
         .pipe(concat(distPaths.js_build_file))
-        .pipe(uglify().on('error', function(e){
-            console.log(e);
-         }))
-        //.pipe(uglify())
+        // .pipe(uglify().on('error', function(e){
+        //     console.log(e);
+        //  }))
+        .pipe(uglify())
         .pipe(gulp.dest(distPaths.build));
 });
 

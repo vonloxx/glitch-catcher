@@ -230,7 +230,7 @@ Player.prototype.constructor = Player;
 Player.prototype.die = function(){
   //console.log('DIE!', this);
   this.dying = true;
-}
+};
 
 Player.prototype.stopExpanding = function(){
   this.timer = 0;
@@ -240,4 +240,4 @@ Player.prototype.stopExpanding = function(){
   this.arming = false;
   this.bubble.h = 0;
   this.bubble.w = 0;
-}
+};
