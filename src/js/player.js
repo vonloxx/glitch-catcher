@@ -163,6 +163,11 @@ function Player() {
     var ctx = that.parent.parent.ctx;
 
     ctx.save();
+
+    if (that.spawning) {
+      ctx.globalAlpha = parseInt(that.spawningTimer * 10) % 2 == 0?0.5:0;//0.5;
+    }
+
     ctx.translate(that.position.x,that.position.y);
     //ctx.rotate(45 * Math.PI / 180);
     ctx.rotate(that.angle * Math.PI / 180);
@@ -173,6 +178,7 @@ function Player() {
     //ctx.rect(that.position.x - (that.dimension.w / 2), that.position.y - (that.dimension.h / 2), that.dimension.w, that.dimension.h);
     ctx.fillStyle = that.colliding?'red':'white';
     ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.restore();
 
     if (that.expanding) {
@@ -235,17 +241,6 @@ function Player() {
       //ctx.stroke();
       ctx.globalAlpha = 1;
     }
-
-    if (that.spawning) {
-      ctx.globalAlpha = parseInt(that.spawningTimer * 10) % 2 == 0?0.5:0;//0.5;
-      ctx.beginPath();
-      ctx.arc(that.position.x, that.position.y, 64, 0, 2 * Math.PI);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fill();
-      //ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
   });
 
 }
