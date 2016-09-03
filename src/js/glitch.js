@@ -11,7 +11,7 @@ function Glitch() {
     x: Math.random() * (10) - 5,
     y: Math.random() * (10) - 5
   };
-  this.velocity = Math.random() * (20) + 20;
+  this.velocity = Math.random() * (5) + 5;
   this.rotateTo = 0;
   this.angle = 0;
   this.timer = 0;
@@ -47,6 +47,39 @@ function Glitch() {
              rect1.height + rect1.y > rect2.y) {
                collision.collision = true;
                collision.callback(that, collision);
+          }
+        }
+
+        if (collision.type === 'explosion') {
+          var circle = {
+            x: collision.target.position.x,
+            y: collision.target.position.y,
+            r: collision.target.bubble.w,
+          };
+
+          var rect = {
+            x: that.position.x,
+            y: that.position.y,
+            w: that.dimension.w,
+            h: that.dimension.h
+          };
+
+          var distX = Math.abs(circle.x - rect.x-rect.w/2);
+          var distY = Math.abs(circle.y - rect.y-rect.h/2);
+
+          if (distX > (rect.w/2 + circle.r)) { return false; }
+          if (distY > (rect.h/2 + circle.r)) { return false; }
+
+          if (distX <= (rect.w/2)) { collision.collision = true; }
+          if (distY <= (rect.h/2)) { collision.collision = true; }
+
+          var dx=distX-rect.w/2;
+          var dy=distY-rect.h/2;
+
+          collision.collision = (dx*dx+dy*dy<=(circle.r*circle.r));
+
+          if ( collision.collision ) {
+            collision.callback(that, collision);
           }
         }
 
@@ -89,10 +122,12 @@ function Glitch() {
 
     if (parseInt(that.timer) % 25 === 0 && parseInt(that.timer) % 50 != 0) {
       that.distance.x = Math.random() * (10) - 5;
+      //that.distance.x++;
     }
 
     if (parseInt(that.timer) % 50 === 0) {
       that.distance.y = Math.random() * (10) - 5;
+      //that.distance.y++;
     }
 
     // var distance = Math.sqrt(xDistance * xDistance + yDistance * yDistance);
@@ -108,19 +143,19 @@ function Glitch() {
     that.position.y += velY;
 
     if (that.position.x > that.parent.parent.width) {
-      that.position.x -= velX*2;
+      that.position.x = 0; //-= velX*2;
     }
 
     if (that.position.x < 0) {
-      that.position.x -= velX*2;
+      that.position.x = that.parent.parent.width; //-= velX*2;
     }
 
     if (that.position.y > that.parent.parent.height) {
-      that.position.y -= velY*2;
+      that.position.y = 0; // -= velY*2;
     }
 
     if (that.position.y < 0) {
-      that.position.y -= velY*2;
+      that.position.y = that.parent.parent.height; // -= velY*2;
     }
 
     that.angle = Math.atan2(that.distance.y,that.distance.x) * (180/Math.PI);
@@ -160,3 +195,7 @@ Glitch.prototype.addCollisionTest = function(target, type, callback){
     collision: false
   });
 };
+
+Glitch.prototype.die = function(){
+  this.triggerListeners('die', this);
+}
