@@ -11,11 +11,14 @@ function Player() {
   this.arming = false;
   this.exploding = false;
   this.colliding = false;
+  this.spawning = false;
+  this.spawningTimer = 0;
+  this.dying = false;
   this.timer = 0;
   this.moveTo = {x: 0, y: 0};
   this.rotateTo = 0;
   this.angle = 0;
-  this.life = 100;
+  this.lives = 3;
 
   this.bubble = {
     w: 0,
@@ -102,9 +105,19 @@ function Player() {
       that.angle = Math.atan2(yDistance,xDistance) * (180/Math.PI);
     }
 
-    if (that.expanding && that.bubble.h < 100) {
+    if (that.expanding && that.bubble.h < 300) {
       that.bubble.w += 32 * (dt * that.bubble.vel);
       that.bubble.h += 32 * (dt * that.bubble.vel);
+    }
+
+    if (that.spawning) {
+      that.spawningTimer += dt * that.velocity * 2;
+      console.log(that.spawningTimer);
+    }
+
+    if (that.spawningTimer > 15) {
+      that.spawningTimer = 0;
+      that.spawning = false;
     }
 
     if (that.arming) {
@@ -122,6 +135,7 @@ function Player() {
         that.timer = 0;
         that.arming = false;
         that.exploding = true;
+        that.triggerListeners('start-explosion', that);
       }
     }
 
@@ -138,6 +152,7 @@ function Player() {
         that.exploding = false;
         that.bubble.w = 0;
         that.bubble.h = 0;
+        that.triggerListeners('end-explosion', that);
       }
     }
 
@@ -210,12 +225,23 @@ function Player() {
       ctx.fillStyle = '#FFFFFF';
       ctx.fill();
 
+      ctx.globalAlpha = 1 - that.timer * 5;
       ctx.beginPath();
       ctx.strokeStyle = '#FFFFFF';
       ctx.lineWidth = 10;
       ctx.arc(that.position.x, that.position.y, that.bubble.w + that.timer * 100, 0, 2 * Math.PI);
       ctx.stroke();
 
+      //ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    if (that.spawning) {
+      ctx.globalAlpha = parseInt(that.spawningTimer * 10) % 2 == 0?0.5:0;//0.5;
+      ctx.beginPath();
+      ctx.arc(that.position.x, that.position.y, 64, 0, 2 * Math.PI);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
       //ctx.stroke();
       ctx.globalAlpha = 1;
     }
@@ -228,8 +254,10 @@ Player.prototype = Object.create(GameObject.prototype);
 Player.prototype.constructor = Player;
 
 Player.prototype.die = function(){
-  //console.log('DIE!', this);
-  this.dying = true;
+  console.log('DIE!', this);
+  this.lives--;
+  this.spawning = true;
+  this.triggerListeners('die', this);
 };
 
 Player.prototype.stopExpanding = function(){
