@@ -8,6 +8,7 @@ function Game(options) {
   this.canvas = null;
   this.scenes = [];
   this.keys = [];
+  this.events = [];
   this.touch = false;
   this.width = options.width || 640;
   this.height = options.height || 480;
@@ -39,8 +40,6 @@ function Game(options) {
   window.addEventListener("load", function() { window.scrollTo(0, 1); });
 
   this.init = function(canvas, webgl) {
-    console.log(this);
-    console.log(that);
     this.canvas = document.getElementById(canvas);
     this.canvas.width = this.width = window.innerWidth; //this.width;
     this.canvas.height = this.height = window.innerHeight; //this.height;
@@ -153,11 +152,13 @@ function Game(options) {
     var now = Date.now();
     dt = (now - lastDelta) / 1000.0;
     // need to fix this:
-    that.ctx.clearRect(0, 0, that.width, that.height);
+    //that.ctx.clearRect(0, 0, that.width, that.height);
+    //that.ctx.globalAlpha = 0.3;
     that.ctx.beginPath();
     that.ctx.rect(0, 0, that.width, that.height);
     that.ctx.fillStyle = 'black';
     that.ctx.fill();
+    that.ctx.globalAlpha = 1;
     that.update(dt);
     that.render();
 
@@ -189,9 +190,11 @@ function Game(options) {
 
   document.addEventListener("touchstart", function(e){
     that.touch = true;
+    triggerEventListeners('touchstart', e);
   }, false);
   document.addEventListener("touchend", function(e){
     that.touch = false;
+    triggerEventListeners('touchend', e);
   }, false);
 
   document.addEventListener("mousedown", function(e){
