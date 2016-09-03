@@ -36,11 +36,6 @@ function Glitch() {
             height: that.dimension.h
           }
 
-          // console.log(rect1.x, rect2.x + rect2.width);
-          // console.log(rect1.x + rect1.width, rect2.x);
-          // console.log(rect1.y, rect2.y + rect2.height);
-          // console.log(rect1.height + rect1.y, rect2.y);
-
           if (rect1.x < rect2.x + rect2.width &&
              rect1.x + rect1.width > rect2.x &&
              rect1.y < rect2.y + rect2.height &&
@@ -122,20 +117,12 @@ function Glitch() {
 
     if (parseInt(that.timer) % 25 === 0 && parseInt(that.timer) % 50 != 0) {
       that.distance.x = Math.random() * (10) - 5;
-      //that.distance.x++;
     }
 
     if (parseInt(that.timer) % 50 === 0) {
       that.distance.y = Math.random() * (10) - 5;
-      //that.distance.y++;
     }
 
-    // var distance = Math.sqrt(xDistance * xDistance + yDistance * yDistance);
-    // if (distance > 1) {
-    //   //that.position.x += 10 * (dt * that.velocity);
-    //   that.position.x += xDistance * (dt * that.velocity);
-    //   that.position.y += yDistance * (dt * that.velocity);
-    // }
     var velX = that.distance.x * (dt * that.velocity);
     var velY = that.distance.y * (dt * that.velocity);
 
