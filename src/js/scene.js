@@ -6,18 +6,13 @@ function Scene() {
   this.parent = null;
   var that = this;
 
-  this.addEntity = function(entity) {
-    entity.parent = that;
-    this.entities.push(entity);
-  };
-
   this.addListener('update', function(dt){
     that.entities.forEach(function(entity){
       entity.update(dt);
     });
   });
 
-  this.addListener('render', function(dt){
+  this.addListener('render', function(){
     that.entities.forEach(function(entity){
       entity.render();
     });
@@ -26,3 +21,18 @@ function Scene() {
 
 Scene.prototype = Object.create(GameObject.prototype);
 Scene.prototype.constructor = Scene;
+
+Scene.prototype.addEntity = function(entity, zIndex){
+  entity.ctx = this.ctx;
+  entity.parent = this;
+  this.entities.push(entity);
+}
+
+Scene.prototype.init = function(){
+  this.triggerListeners('init');
+}
+
+Scene.prototype.clear = function(){
+  this.entities = [];
+  //this.listeners = [];
+}

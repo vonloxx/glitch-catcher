@@ -13,6 +13,7 @@ var gulp          = require('gulp'),
     zip           = require('gulp-zip'),
     checkFileSize = require('gulp-check-filesize'),
     watch         = require('gulp-watch'),
+    minify        = require('gulp-minify'),
 
     serveDir = './src',
 
@@ -23,6 +24,7 @@ var gulp          = require('gulp'),
 
     distPaths = {
         build: '_build',
+        js_concat_file: 'game.js',
         js_build_file: 'game.min.js',
         css_build_file: 'game.min.css'
     },
@@ -32,7 +34,6 @@ var gulp          = require('gulp'),
             'src/css/*.css',
         ],
         js: [
-            'src/js/game.js',
             'src/js/*.js'
         ],
         mainHtml: [
@@ -52,6 +53,13 @@ gulp.task('serve', function () {
     }));
 });
 
+/* Golfing tests purposes */
+gulp.task('golf', function(){
+  return gulp.src('src/test/golf.js')
+      .pipe(minify())
+      .pipe(gulp.dest('_golf'));
+});
+
 gulp.task('openbrowser', function () {
     opn( 'http://' + server.host + ':' + server.port );
 });
@@ -65,11 +73,12 @@ gulp.task('buildCSS', function () {
 
 gulp.task('buildJS', function () {
     return gulp.src(sourcePaths.js)
-        .pipe(concat(distPaths.js_build_file))
+        .pipe(concat(distPaths.js_concat_file))
         // .pipe(uglify().on('error', function(e){
         //     console.log(e);
         //  }))
-        .pipe(uglify())
+        //.pipe(uglify())
+        .pipe(minify())
         .pipe(gulp.dest(distPaths.build));
 });
 
@@ -95,7 +104,7 @@ gulp.task('zipBuild', function () {
         .pipe(zip('game.zip'))
         .pipe(gulp.dest('./_dist'))
         .pipe(checkFileSize({
-            fileSizeLimit: 16384
+            fileSizeLimit: 13312
         }));
 });
 

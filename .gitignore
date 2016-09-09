@@ -2,3 +2,6 @@
 /node_modules
 /_build
 /_dist
+/_test
+/_old
+/src/test

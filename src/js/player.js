@@ -1,266 +1,349 @@
 "use strict";
 
-function Player() {
-  GameObject(this); //extend from game object.
-
-  this.position = {x: 0, y: 0};
+function Player(options) {
+  this.position = {x: options && options.x || 0, y: options && options.y || 0};
   this.dimension = {w: 32, h: 32};
   this.velocity = 5;
-  this.moving = false;
-  this.expanding = false;
-  this.arming = false;
-  this.exploding = false;
-  this.colliding = false;
-  this.spawning = false;
-  this.spawningTimer = 0;
-  this.dying = false;
   this.timer = 0;
   this.moveTo = {x: 0, y: 0};
-  this.rotateTo = 0;
   this.angle = 0;
   this.lives = 3;
+  this.kills = 0;
 
-  this.bubble = {
-    w: 0,
-    h: 0,
-    vel: 1,
-    armed: {
-      w: 0,
-      h: 0
-    }
-  };
+  this.idle = false;
+  this.empState = 0; // States: 0=Idle, 1=Arming, 2=Release, 3=Exploding.
+  this.empTimer = 0;
+  this.spawning = false;
+  this.moving = false;
+  this.colliding = false;
+  this.dying = false;
+  this.diePreCallback = function(){};
+  this.diePostCallback = function(){};
+  this.canMove = false;
 
-  var that = this;
+  // hack.
+  this.isMouseDown = false;
 
-  if (('ontouchstart' in window) ||
-       (navigator.maxTouchPoints > 0) ||
-       (navigator.msMaxTouchPoints > 0)) {
+  this.explosionCallback = null;
 
-  } else {
-
+  this.emp = {
+    x: this.x,
+    y: this.y,
+    radius: 0,
+    pX: this.x,
+    pY: this.y,
+    pRadius: 0,
   }
 
-  this.addListener("touchmove", function(e){
-    var touches = e.changedTouches;
+  this.collisions = [];
+  var that = this;
 
-    that.moveTo.x = touches[0].pageX;
-    that.moveTo.y = touches[0].pageY;
-    that.moving = true;
-
-    if (!that.exploding && !that.arming) {
-      that.exploding = false;
-      that.arming = false;
-      that.expanding = true;
-    }
-    e.preventDefault();
-  });
-
-  this.addListener("touchstart", function(e){
-    var touches = e.changedTouches;
-
-    if (that.arming) {
-      that.moveTo.x = touches[0].pageX;
-      that.moveTo.y = touches[0].pageY;
-      that.moving = true;
-    }
-
-    that.expanding = true;
-  });
-
-  this.addListener("touchend", function(e){
-    if (that.bubble.h > 32) {
-      that.expanding = false;
-      this.exploding = false;
-      that.arming = true;
-      that.timer = 0;
-      that.bubble.armed.w = that.bubble.w;
-      that.bubble.armed.h = that.bubble.h;
-    } else {
-      that.timer = 0;
-      that.expanding = false;
-      this.exploding = false;
-      that.arming = false;
-      that.bubble.armed.w = 0;
-      that.bubble.w = 0;
-      that.bubble.armed.h = 0;
-      that.bubble.h = 0;
-
-    }
-  });
-
-  this.addListener('update', function(dt){
+  this.checkCollisions = function() {
     that.colliding = false;
+    if (that.empState === 0 || that.empState === 1 || that.empState === 3) {
+      //that.collisions.forEach(function(collision){
+      for (var i = 0; i < that.collisions.length; i++) {
+        var collision = that.collisions[i];
+        if (collision.type === 'player') {
+          var c1 = {radius: collision.obj.radius, x: collision.obj.x, y: collision.obj.y};
+          var c2 = {radius: that.emp.radius > that.dimension.w ? that.emp.radius : that.dimension.w, x: that.position.x, y: that.position.y};
 
-    if (that.moving) {
-      var xDistance = that.moveTo.x - that.position.x;
-      var yDistance = that.moveTo.y - that.position.y;
-      var distance = Math.sqrt(xDistance * xDistance + yDistance * yDistance);
-      if (distance > 1) {
-          that.position.x += xDistance * (dt * that.velocity);
-          that.position.y += yDistance * (dt * that.velocity);
-      } else {
-        that.moving = false;
-      }
+          var dx = c1.x - c2.x;
+          var dy = c1.y - c2.y;
+          var distance = Math.sqrt(dx * dx + dy * dy);
 
-      that.angle = Math.atan2(yDistance,xDistance) * (180/Math.PI);
+          if (distance < c1.radius + c2.radius) {
+            that.colliding = true;
+            collision.callback(collision.obj, that);
+          }
+        }
+      };
+      //});
     }
+  }
 
-    if (that.expanding && that.bubble.h < 300) {
-      that.bubble.w += 32 * (dt * that.bubble.vel);
-      that.bubble.h += 32 * (dt * that.bubble.vel);
+  var mobile = "ontouchstart" in document;
+
+  $.addEventListener('touchstart', function(e){
+    if (that.empState === 0) {
+      that.armEMP();
     }
-
-    if (that.spawning) {
-      that.spawningTimer += dt * that.velocity * 2;
-      console.log(that.spawningTimer);
-    }
-
-    if (that.spawningTimer > 15) {
-      that.spawningTimer = 0;
-      that.spawning = false;
-    }
-
-    if (that.arming) {
-      if (that.dimension.w <= 64) {
-        that.dimension.w += 64 * (dt * that.bubble.vel);
-        that.dimension.h += 64 * (dt * that.bubble.vel);
-
-        that.bubble.w += 32 * (dt * that.bubble.vel);
-        that.bubble.h += 32 * (dt * that.bubble.vel);
-      }
-
-      that.timer += dt * that.bubble.vel * 2;
-
-      if (that.timer > 1) {
-        that.timer = 0;
-        that.arming = false;
-        that.exploding = true;
-        that.triggerListeners('start-explosion', that);
-      }
-    }
-
-    if (that.exploding) {
-      that.dimension.w = 32;
-      that.dimension.h = 32;
-      that.bubble.w = that.bubble.armed.w;
-      that.bubble.h = that.bubble.armed.h;
-
-      that.timer += dt * that.bubble.vel * 2;
-
-      if (that.timer > 1) {
-        that.timer = 0;
-        that.exploding = false;
-        that.bubble.w = 0;
-        that.bubble.h = 0;
-        that.triggerListeners('end-explosion', that);
-      }
-    }
-
-
+    that.canMove = true;
+    that.move(e.clientX, e.clientY);
   });
 
-  this.addListener('render', function(){
-    var ctx = that.parent.parent.ctx;
-
-    ctx.save();
-
-    if (that.spawning) {
-      ctx.globalAlpha = parseInt(that.spawningTimer * 10) % 2 == 0?0.5:0;//0.5;
-    }
-
-    ctx.translate(that.position.x,that.position.y);
-    //ctx.rotate(45 * Math.PI / 180);
-    ctx.rotate(that.angle * Math.PI / 180);
-    ctx.translate(-that.dimension.w/2,-that.dimension.h/2); // before we draw the sprite lets set the anchor point to its center.
-    ctx.beginPath();
-    //ctx.rect(that.position.x, that.position.y, that.dimension.w, that.dimension.h);
-    ctx.rect(0, 0, that.dimension.w, that.dimension.h);
-    //ctx.rect(that.position.x - (that.dimension.w / 2), that.position.y - (that.dimension.h / 2), that.dimension.w, that.dimension.h);
-    ctx.fillStyle = that.colliding?'red':'white';
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.restore();
-
-    if (that.expanding) {
-      ctx.globalAlpha = 0.5;
-      ctx.beginPath();
-      ctx.arc(that.position.x, that.position.y, that.bubble.w, 0, 2 * Math.PI);
-      ctx.fillStyle = '#00CCFF';
-      ctx.fill();
-      //ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      // if (that.bubble.h < 100) {
-      //   ctx.beginPath();
-      //   ctx.strokeStyle = '#FFFFFF';
-      //   ctx.lineWidth = 5;
-      //   ctx.arc(that.position.x, that.position.y, that.bubble.w, that.bubble.w / 2, that.bubble.w / 2 + (Math.PI));
-      //   ctx.stroke();
-      // }
-    }
-
-    if (that.arming || that.expanding) {
-      ctx.globalCompositeOperation = "overlay";
-      for (var i = 0; i < 10; i++) {
-        ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 10;
-        var bubbleRad = that.bubble.w - Math.random() * that.bubble.w;
-        ctx.arc(that.position.x, that.position.y, bubbleRad, bubbleRad / 2, bubbleRad / 2 + (Math.PI));
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-      ctx.globalCompositeOperation = "source-over";
-    }
-
-    if (that.arming) {
-      ctx.globalAlpha = parseInt(that.timer * 10) % 2 == 0?0.5:0;//0.5;
-      ctx.beginPath();
-      ctx.arc(that.position.x, that.position.y, that.bubble.w, 0, 2 * Math.PI);
-      ctx.fillStyle = '#00CCFF';
-      ctx.fill();
-      //ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
-    if (that.exploding) {
-      ctx.globalAlpha = 1 - that.timer;
-      ctx.beginPath();
-      ctx.arc(that.position.x, that.position.y, that.bubble.w, 0, 2 * Math.PI);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fill();
-
-      ctx.globalAlpha = 1 - that.timer * 5;
-      ctx.beginPath();
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 10;
-      ctx.arc(that.position.x, that.position.y, that.bubble.w + that.timer * 100, 0, 2 * Math.PI);
-      ctx.stroke();
-
-      //ctx.stroke();
-      ctx.globalAlpha = 1;
+  $.addEventListener('touchend', function(e){
+    that.canMove = false;
+    if (that.empState === 1 && that.empTimer > 0.5) {
+      that.releaseEMP();
+    } else if(that.empState === 1 && that.empTimer <= 0.5) {
+      that.empState = 0;
     }
   });
 
+  $.addEventListener('touchmove', function(e){
+    if (that.empState == 0) {
+      that.armEMP();
+    }
+
+    that.canMove = true;
+    that.move(e.clientX, e.clientY);
+  });
+
+  $.addEventListener('mousedown', function(e){
+    that.isMouseDown = true;
+    if (that.empState == 0) {
+      that.armEMP();
+    }
+    that.canMove = true;
+    that.move(e.clientX, e.clientY);
+  });
+
+  $.addEventListener('mouseup', function(e){
+    that.isMouseDown = false;
+    that.canMove = false;
+    if (that.empState == 1) {
+      that.releaseEMP();
+    }
+  });
+
+  $.addEventListener('mousemove', function(e){
+    if (that.isMouseDown) {
+      if (that.empState == 0) {
+        that.armEMP();
+      }
+
+      that.canMove = true;
+    }
+    that.move(e.clientX, e.clientY);
+  });
 }
 
-Player.prototype = Object.create(GameObject.prototype);
-Player.prototype.constructor = Player;
+Player.prototype.update = function(dt){
+  if (!this.spawning) {
+    this.checkCollisions();
+  }
 
-Player.prototype.die = function(){
-  console.log('DIE!', this);
-  this.lives--;
-  this.spawning = true;
-  this.triggerListeners('die', this);
-};
+  if (this.moving) {
+    var xDistance = this.moveTo.x - this.position.x;
+    var yDistance = this.moveTo.y - this.position.y;
+    var distance = Math.sqrt(xDistance * xDistance + yDistance * yDistance);
+    if (distance > 1) {
+        this.position.x += xDistance * (dt * this.velocity);
+        this.position.y += yDistance * (dt * this.velocity);
+    } else {
+      this.moving = false;
+    }
 
-Player.prototype.stopExpanding = function(){
+    this.angle = Math.atan2(yDistance,xDistance) * (180/Math.PI);
+  }
+
+  //Spawning.
+  if (this.spawning && this.timer > 2) {
+    this.spawning = false;
+  }
+
+  //Dying.
+  if (this.dying && this.timer > 1) {
+    this.dying = false;
+    this.timer = 0;
+    this.diePostCallback(this);
+    this.spawn();
+  }
+
+  // Arming EMP
+  if (this.empState === 1) {
+    this.empTimer += dt;
+    this.emp.radius = this.empTimer * 50;
+  }
+
+  if (this.empState === 2) {
+    this.empTimer += dt;
+
+    if (this.empTimer > 1) {
+      this.explodeEMP();
+    }
+  }
+
+  if (this.empState === 3) {
+    this.empTimer += dt;
+
+    if (this.empTimer > 1) {
+      this.empState = 0; // back to iddle.
+      this.empTimer = 0;
+    }
+  }
+
+  this.timer += dt;
+}
+
+Player.prototype.render = function(){
+  var ctx = this.ctx;
+
+  if (this.idle) {
+    return false;
+  }
+
+  if (!this.dying) {
+    if (this.spawning) {
+      ctx.globalAlpha = parseInt(this.timer * 10) % 2 == 0?1:0.5;
+    }
+
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.dimension.w, 0, 2 * Math.PI);
+    ctx.fillStyle = this.colliding?'red':'white';
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(this.position.x, this.position.y);
+    ctx.rotate(this.angle * Math.PI / 180);
+    ctx.translate(-this.dimension.w/2,-this.dimension.h/2); // before we draw the sprite lets set the anchor point to its center.
+    ctx.beginPath();
+    ctx.rect(0, 0, this.dimension.w, this.dimension.h);
+    ctx.fillStyle = this.colliding?'yellow':'black';
+    ctx.fill();
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 12px "pulse"';
+  ctx.fillText('STATE ' + this.empState, 1, ctx.canvas.height - 20);
+  ctx.fillText('TIMER ' + this.empTimer, 100, ctx.canvas.height - 20);
+  //ctx.fillText('DELTA ' + that.dt, 100, ctx.canvas.height - 1);
+
+
+  if (this.empState == 1) {
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.emp.radius, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(0,216,255,0.8)';
+    ctx.fill();
+
+    ctx.globalCompositeOperation = "overlay";
+    for (var i = 0; i < 10; i++) {
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 10;
+      var randomRadius = this.emp.radius - Math.random() * this.emp.radius;
+      ctx.arc(this.position.x, this.position.y, randomRadius, randomRadius / 2, randomRadius / 2 + (Math.PI));
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  if (this.empState == 2) {
+    //ctx.globalCompositeOperation = "destination-over";
+    //ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.emp.radius, 0, 2 * Math.PI);
+
+    ctx.fillStyle = parseInt(this.empTimer * 10) % 2 == 0?'rgba(0,216,255,0.8)':'rgba(0,216,255,0.4)';
+    ctx.fill();
+    //ctx.globalCompositeOperation = "source-over";
+    //ctx.globalAlpha = 1;
+  }
+
+  if (this.empState == 3) {
+    ctx.beginPath();
+    ctx.arc(this.emp.pX, this.emp.pY, this.emp.pRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(255,255,255,' + (1-this.empTimer) + ')';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(this.emp.pX, this.emp.pY, this.emp.pRadius + this.empTimer * 60, 0, 2 * Math.PI);
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(255,255,255,' + (1-this.empTimer) + ')';
+    ctx.stroke();
+
+  }}
+
+Player.prototype.move = function(x, y){
+  if (this.canMove) {
+    this.moveTo.x = x;
+    this.moveTo.y = y;
+    this.moving = true;
+  }
+}
+
+Player.prototype.setIdle = function() {
+  this.idle = true;
+}
+
+Player.prototype.spawn = function() {
   this.timer = 0;
-  this.expanding = false;
-  this.moving = false;
-  this.exploding = false;
-  this.arming = false;
-  this.bubble.h = 0;
-  this.bubble.w = 0;
-};
+  this.spawning = true;
+  this.empState = 0;
+}
+
+Player.prototype.die = function(preCallback, postCallback) {
+  var explosion1 = new Explosion({x: this.position.x, y: this.position.y, color: '#cc0000'});
+  var explosion2 = new Explosion({x: this.position.x, y: this.position.y, color: '#ccff00'});
+  this.parent.addEntity(explosion1);
+  this.parent.addEntity(explosion2);
+
+  this.emp.radius = 0;
+  this.lives--;
+  this.timer = 0;
+  this.dying = true;
+  this.diePostCallback = postCallback;
+  this.empState = -1;
+  preCallback(this);
+  //this.spawn();
+}
+
+Player.prototype.armEMP = function() {
+  this.emp.radius = 0;
+  this.empTimer = 0;
+  this.empState = 1;
+}
+
+Player.prototype.releaseEMP = function() {
+  this.empState = 2;
+  this.empTimer = 0;
+}
+
+Player.prototype.explodeEMP = function() {
+  // trigger explosion collision tests.
+  var that = this;
+
+  this.collisions.forEach(function(collision){
+    if (collision.type === 'explosion') {
+      var r1 = collision.obj.radius;
+      var r2 = that.emp.radius;
+      var p1x = collision.obj.x;
+      var p1y = collision.obj.y;
+      var p2x = that.position.x;
+      var p2y = that.position.y;
+
+      var a = r1 + r2;
+      var x = p1x - p2x;
+      var y = p1y - p2y;
+
+      if ( a > Math.sqrt( (x*x) + (y*y) ) ) {
+        collision.callback(collision.obj, that);
+      }
+    }
+  });
+
+  if (this.explosionCallback) {
+    this.explosionCallback(this);
+  }
+
+  this.emp.pX = this.position.x;
+  this.emp.pY = this.position.y;
+  this.emp.pRadius = this.emp.radius;
+  this.emp.radius = 0;
+  this.empState = 3;
+  this.empTimer = 0;
+  this.kills = 0;
+}
+
+Player.prototype.addCollisionTest = function(obj, type, callback) {
+  this.collisions.push({
+    obj: obj,
+    type: type,
+    callback: callback
+  });
+}
