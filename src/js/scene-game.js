@@ -1,56 +1,88 @@
 var game = new Scene();
 
 game.addStats = function() {
+  game.stats = {
+    date: Date.now(),
+    score: game.score,
+    pulses: game.pulsesCount,
+    kills: game.kills,
+    maxKills: game.maxKills,
+    maxScore: game.maxScore,
+    startTime: game.startTime,
+    endTime: game.endTime,
+  }
+
   var stats = window.localStorage.getItem('stats');
   var col = [];
   if (stats) {
     col = JSON.parse(stats);
   }
 
-  col.push(
-    {
-      date: Date.now(),
-      score: game.score,
-      pulses: game.pulsesCount,
-      kills: game.kills,
-      startTime: game.startTime,
-      endTime: game.endTime,
-    }
-  );
+  col.push(game.stats);
 
   window.localStorage.setItem('stats', JSON.stringify(col));
+}
+
+game.getHiScore = function() {
+  var stats = window.localStorage.getItem('stats');
+  var hi = 0;
+  if (stats) {
+    var col = JSON.parse(stats);
+    col.forEach(function(stat){
+      if (stat.score > hi) {
+        hi = stat.score;
+      }
+    });
+  }
+  return hi;
 }
 
 game.addListener('init', function(){
   game.timer = 0;
   game.score = 0;
   game.kills = 0;
+  game.maxKills = 0;
+  game.maxScore = 0;
   game.addBoids = false;
   game.boidsCounter = 0;
   game.pulsesCount = 0;
   game.startTime = Date.now();
   game.endTime = null;
+  game.stats = null;
+  game.gameOver = false;
 
   // Every 2 seconds add 20 boids.
   game.boidsCreationInterval = window.setInterval(function(){
-    var boids = game.entities[0].createBoid(20);
+    var num = 10;
+    var type = 'normal';
+
+    if (game.boidsCounter == 20) {
+      num = 1;
+      type = 'alt';
+    }
+
+    var boids = game.entities[0].createBoid(num, type);
     boids.forEach(function(boid){
       player.addCollisionTest(boid, 'explosion', function(boid, player){
         // Don't destroy the boid, just reset position.
         boid.x = 0;
         boid.y = 0;
         player.kills++;
+
+        if (boid.type == 'alt') {
+          player.hitGlitch = true;
+        }
       });
 
       player.addCollisionTest(boid, 'player', collisionCallback);
     });
 
-    game.boidsCounter += 20;
+    game.boidsCounter += num;
 
-    if (game.boidsCounter > 200) {
+    if (game.boidsCounter > (MOBILE?100:200)) {
       window.clearInterval(game.boidsCreationInterval);
     }
-  }, 2000);
+  }, 5000);
 
   var swarm = new Swarm({
     width: game.parent.width,
@@ -71,6 +103,12 @@ game.addListener('init', function(){
     if (player.kills === 0) {
       return;
     }
+
+    if (player.hitGlitch) {
+      console.log('NO SCORE!');
+      player.hitGlitch = false;
+      return;
+    }
     // Higher the kill count in one explosion, higher the bonus.
     var killScore = player.kills + Math.floor(Math.pow(player.kills / 2, 2));
     killScore = killScore < player.kills?player.kills:killScore;
@@ -78,10 +116,18 @@ game.addListener('init', function(){
     game.score += killScore;
     game.kills += player.kills;
 
+    if (killScore > game.maxScore) {
+      game.maxScore = killScore;
+    }
+
+    if (player.kills > game.maxKills) {
+      game.maxKills = player.kills;
+    }
+
     killsText.text = '+' + killScore; // + '[' + player.kills + ']';
-    killsText.fillStyle = 'white';
+    killsText.fillStyle = 'rgba(' + $palette[7] + ',1)';
     if (player.kills > 20) {
-      killsText.fillStyle = 'yellow';
+      killsText.fillStyle = 'rgba(' + $palette[8] + ',1)';
     }
     if (player.kills > 40) {
       killsText.fillStyle = 'red';
@@ -89,13 +135,21 @@ game.addListener('init', function(){
     killsText.start();
   }
 
-  function collisionCallback() {
+  function collisionCallback(boid) {
+    if (boid.type == 'alt') {
+      return;
+    }
     player.die(
       function(player) {
         if (player.lives <= 0) {
-          var text = new Text({
+          game.gameOver = true;
+          game.timer = 0;
+          var hiScore = game.getHiScore();
+          var isHiScore = game.score > hiScore;
+
+          var text = new T({
             x: game.parent.width / 2,
-            y: game.parent.height / 2,
+            y: game.parent.height / 2 - 140,
             font: '48px "pulse"',
             text: 'GAME OVER!'
           });
@@ -103,6 +157,68 @@ game.addListener('init', function(){
           game.addEntity(text);
           game.endTime = Date.now();
           game.addStats();
+
+          var text1 = new T({
+            x: game.parent.width / 2,
+            y: game.parent.height / 2 - 90,
+            font: '36px "pulse"',
+            text: 'SCORE: ' + game.score,
+          });
+          game.addEntity(text1);
+
+            var text11 = new T({
+              x: game.parent.width / 2,
+              y: game.parent.height / 2 - 70,
+              font: '14px "pulse"',
+              fillStyle: 'rgba(' + $palette[8] + ',1)',
+              text: '\u2605 NEW HI-SCORE \u2605',
+            });
+            if (!isHiScore) {
+              text11.text = 'HI-SCORE: ' + hiScore;
+            }
+            game.addEntity(text11);
+
+
+          var text2 = new T({
+            x: game.parent.width / 2,
+            y: game.parent.height / 2 - 30,
+            font: '24px "pulse"',
+            text: 'Pulses: ' + game.stats.pulses,
+          });
+          game.addEntity(text2);
+
+          var text3 = new T({
+            x: game.parent.width / 2,
+            y: game.parent.height / 2,
+            font: '24px "pulse"',
+            text: 'Kills: ' + game.stats.kills,
+          });
+          game.addEntity(text3);
+
+          var text4 = new T({
+            x: game.parent.width / 2,
+            y: game.parent.height / 2 + 40,
+            font: '18px "pulse"',
+            text: 'In one pulse',
+          });
+          game.addEntity(text4);
+
+          var text5 = new T({
+            x: game.parent.width / 2,
+            y: game.parent.height / 2 + 60,
+            font: '18px "pulse"',
+            text: 'Max Kills: ' + game.stats.maxKills,
+          });
+          game.addEntity(text5);
+
+          var text6 = new T({
+            x: game.parent.width / 2,
+            y: game.parent.height / 2 + 80,
+            font: '18px "pulse"',
+            text: 'Max Score: ' + game.stats.maxScore,
+          });
+          game.addEntity(text6);
+
         }
       },
       function(player) {
@@ -115,6 +231,7 @@ game.addListener('init', function(){
           }
           var l1 = $.addEventListener('touchstart', setActiveScene);
           var l2 = $.addEventListener('mousedown', setActiveScene);
+          window.clearInterval(game.boidsCreationInterval);
         }
       }
     );
@@ -126,6 +243,11 @@ game.addListener('init', function(){
       boid.x = 0;
       boid.y = 0;
       player.kills++;
+
+      if (boid.type == 'alt') {
+        player.hitGlitch = true;
+        console.log('HIT!');
+      }
     });
 
     player.addCollisionTest(boid, 'player', collisionCallback);
@@ -137,7 +259,7 @@ game.addListener('init', function(){
 
   game.addEntity(player);
 
-  var scoreText = new Text({
+  var scoreText = new T({
     x: game.parent.width / 2,
     y: 60,
     font: '36px "pulse"',
@@ -146,14 +268,17 @@ game.addListener('init', function(){
 
   scoreText.addListener('update', function(dt){
     scoreText.text = game.score;
+    if (game.gameOver && scoreText.y > - 20) {
+      scoreText.y -= dt * 200;
+    }
   });
 
   game.addEntity(scoreText);
 
-  var livesText = new Text({
+  var livesText = new T({
     x: game.parent.width / 2,
     y: 30,
-    font: '16px "pulse"',
+    font: '24px "pulse"',
     fillStyle: 'red',
     text: "\u2665\u2665\u2665"
   });
@@ -164,8 +289,7 @@ game.addListener('init', function(){
 
   game.addEntity(livesText);
 
-
-  var killsText = new Text({
+  var killsText = new T({
     x: game.parent.width / 2,
     y: 80,
     font: '36px "pulse"',

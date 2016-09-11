@@ -9,10 +9,12 @@ function Player(options) {
   this.angle = 0;
   this.lives = 3;
   this.kills = 0;
+  this.hitGlitch = false;
 
   this.idle = false;
   this.empState = 0; // States: 0=Idle, 1=Arming, 2=Release, 3=Exploding.
-  this.empTimer = 0;
+  this.empTimer = -1;
+  this.explosionTimer = 0;
   this.spawning = false;
   this.moving = false;
   this.colliding = false;
@@ -64,59 +66,63 @@ function Player(options) {
 
   var mobile = "ontouchstart" in document;
 
-  $.addEventListener('touchstart', function(e){
-    if (that.empState === 0) {
-      that.armEMP();
-    }
-    that.canMove = true;
-    that.move(e.clientX, e.clientY);
-  });
+  if (!options.demo) {
+    $.addEventListener('touchstart', function(e){
+      if (that.empState === 0) {
+        that.armEMP();
+      }
+      that.canMove = true;
+      that.move(e.clientX, e.clientY);
+    });
 
-  $.addEventListener('touchend', function(e){
-    that.canMove = false;
-    if (that.empState === 1 && that.empTimer > 0.5) {
-      that.releaseEMP();
-    } else if(that.empState === 1 && that.empTimer <= 0.5) {
-      that.empState = 0;
-    }
-  });
+    $.addEventListener('touchend', function(e){
+      that.canMove = false;
+      if (that.empState === 1 && that.empTimer > 0.5) {
+        that.releaseEMP();
+      } else if(that.empState === 1 && that.empTimer <= 0.5) {
+        that.empState = 0;
+      }
+    });
 
-  $.addEventListener('touchmove', function(e){
-    if (that.empState == 0) {
-      that.armEMP();
-    }
-
-    that.canMove = true;
-    that.move(e.clientX, e.clientY);
-  });
-
-  $.addEventListener('mousedown', function(e){
-    that.isMouseDown = true;
-    if (that.empState == 0) {
-      that.armEMP();
-    }
-    that.canMove = true;
-    that.move(e.clientX, e.clientY);
-  });
-
-  $.addEventListener('mouseup', function(e){
-    that.isMouseDown = false;
-    that.canMove = false;
-    if (that.empState == 1) {
-      that.releaseEMP();
-    }
-  });
-
-  $.addEventListener('mousemove', function(e){
-    if (that.isMouseDown) {
+    $.addEventListener('touchmove', function(e){
       if (that.empState == 0) {
         that.armEMP();
       }
 
       that.canMove = true;
-    }
-    that.move(e.clientX, e.clientY);
-  });
+      that.move(e.clientX, e.clientY);
+    });
+
+    $.addEventListener('mousedown', function(e){
+      that.isMouseDown = true;
+      if (that.empState == 0) {
+        that.armEMP();
+      }
+      that.canMove = true;
+      that.move(e.offsetX, e.offsetY);
+    });
+
+    $.addEventListener('mouseup', function(e){
+      that.isMouseDown = false;
+      that.canMove = false;
+      if (that.empState == 1) {
+        that.releaseEMP();
+      }
+    });
+
+    $.addEventListener('mousemove', function(e){
+      that.isMouseDown = true;
+
+      if (that.isMouseDown) {
+        // if (that.empState == 0) {
+        //   that.armEMP();
+        // }
+
+        that.canMove = true;
+      }
+      that.move(e.offsetX, e.offsetY);
+    });
+  }
 }
 
 Player.prototype.update = function(dt){
@@ -154,7 +160,7 @@ Player.prototype.update = function(dt){
   // Arming EMP
   if (this.empState === 1) {
     this.empTimer += dt;
-    this.emp.radius = this.empTimer * 50;
+    this.emp.radius = 32 + this.empTimer * 50;
   }
 
   if (this.empState === 2) {
@@ -166,11 +172,16 @@ Player.prototype.update = function(dt){
   }
 
   if (this.empState === 3) {
-    this.empTimer += dt;
+    this.explosionTimer = 0;
+    this.empState = 0; // back to iddle.
+    this.empTimer = 0;
+  }
 
-    if (this.empTimer > 1) {
-      this.empState = 0; // back to iddle.
-      this.empTimer = 0;
+  if (this.explosionTimer >= 0) {
+    this.explosionTimer += dt;
+
+    if (this.explosionTimer >= 1) {
+      this.explosionTimer = -1;
     }
   }
 
@@ -184,47 +195,25 @@ Player.prototype.render = function(){
     return false;
   }
 
-  if (!this.dying) {
-    if (this.spawning) {
-      ctx.globalAlpha = parseInt(this.timer * 10) % 2 == 0?1:0.5;
-    }
-
-    ctx.beginPath();
-    ctx.arc(this.position.x, this.position.y, this.dimension.w, 0, 2 * Math.PI);
-    ctx.fillStyle = this.colliding?'red':'white';
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(this.position.x, this.position.y);
-    ctx.rotate(this.angle * Math.PI / 180);
-    ctx.translate(-this.dimension.w/2,-this.dimension.h/2); // before we draw the sprite lets set the anchor point to its center.
-    ctx.beginPath();
-    ctx.rect(0, 0, this.dimension.w, this.dimension.h);
-    ctx.fillStyle = this.colliding?'yellow':'black';
-    ctx.fill();
-
-    ctx.restore();
-    ctx.globalAlpha = 1;
+  if (DEBUG) {
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px "pulse"';
+    ctx.fillText('STATE ' + this.empState, 1, ctx.canvas.height - 20);
+    ctx.fillText('TIMER ' + this.empTimer, 100, ctx.canvas.height - 20);
   }
-
-  ctx.textAlign = 'left';
-  ctx.fillStyle = 'white';
-  ctx.font = 'bold 12px "pulse"';
-  ctx.fillText('STATE ' + this.empState, 1, ctx.canvas.height - 20);
-  ctx.fillText('TIMER ' + this.empTimer, 100, ctx.canvas.height - 20);
-  //ctx.fillText('DELTA ' + that.dt, 100, ctx.canvas.height - 1);
 
 
   if (this.empState == 1) {
     ctx.beginPath();
     ctx.arc(this.position.x, this.position.y, this.emp.radius, 0, 2 * Math.PI);
-    ctx.fillStyle = 'rgba(0,216,255,0.8)';
+    ctx.fillStyle = 'rgba(' + $palette[2] + ',0.8)';
     ctx.fill();
 
     ctx.globalCompositeOperation = "overlay";
     for (var i = 0; i < 10; i++) {
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.strokeStyle = 'rgba(' + $palette[3] + ',0.8)';
       ctx.lineWidth = 10;
       var randomRadius = this.emp.radius - Math.random() * this.emp.radius;
       ctx.arc(this.position.x, this.position.y, randomRadius, randomRadius / 2, randomRadius / 2 + (Math.PI));
@@ -234,30 +223,53 @@ Player.prototype.render = function(){
   }
 
   if (this.empState == 2) {
-    //ctx.globalCompositeOperation = "destination-over";
-    //ctx.globalAlpha = 0.6;
     ctx.beginPath();
     ctx.arc(this.position.x, this.position.y, this.emp.radius, 0, 2 * Math.PI);
 
-    ctx.fillStyle = parseInt(this.empTimer * 10) % 2 == 0?'rgba(0,216,255,0.8)':'rgba(0,216,255,0.4)';
+    ctx.fillStyle = parseInt(this.empTimer * 10) % 2 == 0?'rgba(' + $palette[1] + ',0.8)':'rgba(' + $palette[1] + ',0.4)';
     ctx.fill();
-    //ctx.globalCompositeOperation = "source-over";
-    //ctx.globalAlpha = 1;
   }
 
-  if (this.empState == 3) {
+  if (this.explosionTimer >= 0) {
     ctx.beginPath();
     ctx.arc(this.emp.pX, this.emp.pY, this.emp.pRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = 'rgba(255,255,255,' + (1-this.empTimer) + ')';
+    ctx.fillStyle = 'rgba(255,255,255,' + (1-this.explosionTimer) + ')';
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(this.emp.pX, this.emp.pY, this.emp.pRadius + this.empTimer * 60, 0, 2 * Math.PI);
+    ctx.arc(this.emp.pX, this.emp.pY, this.emp.pRadius + this.explosionTimer * 60, 0, 2 * Math.PI);
     ctx.lineWidth = 5;
-    ctx.strokeStyle = 'rgba(255,255,255,' + (1-this.empTimer) + ')';
+    ctx.strokeStyle = 'rgba(255,255,255,' + (1-this.explosionTimer) + ')';
     ctx.stroke();
+  }
 
-  }}
+  if (!this.dying) {
+    if (this.spawning) {
+      ctx.globalAlpha = parseInt(this.timer * 10) % 2 == 0?1:0.5;
+    }
+
+    ctx.beginPath();
+    ctx.arc(this.position.x, this.position.y, this.dimension.w, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(' + $palette[1] + ',1)';
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(this.position.x, this.position.y);
+    ctx.rotate(this.angle * Math.PI / 180);
+    ctx.rotate((this.timer*(this.empState == 1?400:200)) * Math.PI / 180);
+    ctx.translate(-this.dimension.w/2,-this.dimension.h/2); // before we draw the sprite lets set the anchor point to its center.
+    // ctx.beginPath();
+    // ctx.rect(0, 0, this.dimension.w, this.dimension.h);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath();
+    ctx.rect(0, 0, this.dimension.w, this.dimension.h);
+    ctx.fill();
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+}
 
 Player.prototype.move = function(x, y){
   if (this.canMove) {
@@ -278,8 +290,8 @@ Player.prototype.spawn = function() {
 }
 
 Player.prototype.die = function(preCallback, postCallback) {
-  var explosion1 = new Explosion({x: this.position.x, y: this.position.y, color: '#cc0000'});
-  var explosion2 = new Explosion({x: this.position.x, y: this.position.y, color: '#ccff00'});
+  var explosion1 = new Explosion({x: this.position.x, y: this.position.y, color: 'rgba(' + $palette[5] + ',1)'});
+  var explosion2 = new Explosion({x: this.position.x, y: this.position.y, color: 'rgba(' + $palette[6] + ',1)'});
   this.parent.addEntity(explosion1);
   this.parent.addEntity(explosion2);
 

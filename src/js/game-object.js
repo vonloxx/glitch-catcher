@@ -1,34 +1,11 @@
 "use strict";
 
-function GameObject(obj) {
+function GO(obj) {
   obj.ctx = null;
   obj.listeners = [];
-
-  // Attach common document events to the game object.
-  //document.addEventListener('DOMContentLoaded', function(){
-    document.addEventListener("mousedown", function(e){
-      obj.triggerListeners('mousedown', e);
-    }, false);
-    document.addEventListener("mouseup", function(e){
-      obj.triggerListeners('mouseup', e);
-    }, false);
-    document.addEventListener("mousemove", function(e){
-      obj.triggerListeners('mousemove', e);
-    }, false);
-
-    document.addEventListener("touchstart", function(e){
-      obj.triggerListeners('touchstart', e);
-    }, false);
-    document.addEventListener("touchend", function(e){
-      obj.triggerListeners('touchend', e);
-    }, false);
-    document.addEventListener("touchmove", function(e){
-      obj.triggerListeners('touchmove', e);
-    }, false);
-  //});
 }
 
-GameObject.prototype.render = function(ctx) {
+GO.prototype.render = function(ctx) {
   if (!this.listeners) {
     return;
   }
@@ -40,7 +17,7 @@ GameObject.prototype.render = function(ctx) {
   });
 };
 
-GameObject.prototype.update = function(dt) {
+GO.prototype.update = function(dt) {
   if (!this.listeners) {
     return;
   }
@@ -52,7 +29,7 @@ GameObject.prototype.update = function(dt) {
   });
 };
 
-GameObject.prototype.addListener = function(type, callback) {
+GO.prototype.addListener = function(type, callback) {
   if (!this.listeners) {
     this.listeners = [];
   }
@@ -63,7 +40,7 @@ GameObject.prototype.addListener = function(type, callback) {
   });
 };
 
-GameObject.prototype.triggerListeners = function(type, event) {
+GO.prototype.triggerListeners = function(type, event) {
   if (!this.listeners) {
     this.listeners = [];
   }

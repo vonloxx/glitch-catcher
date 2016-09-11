@@ -24,7 +24,7 @@ var gulp          = require('gulp'),
 
     distPaths = {
         build: '_build',
-        js_concat_file: 'game.js',
+        //js_concat_file: 'game.js',
         js_build_file: 'game.min.js',
         css_build_file: 'game.min.css'
     },
@@ -73,12 +73,16 @@ gulp.task('buildCSS', function () {
 
 gulp.task('buildJS', function () {
     return gulp.src(sourcePaths.js)
-        .pipe(concat(distPaths.js_concat_file))
+        .pipe(concat(distPaths.js_build_file))
         // .pipe(uglify().on('error', function(e){
         //     console.log(e);
         //  }))
-        //.pipe(uglify())
-        .pipe(minify())
+        .pipe(uglify())
+        // .pipe(minify({
+        //   ext: {
+        //     min:'.js'
+        //   }
+        // }))
         .pipe(gulp.dest(distPaths.build));
 });
 

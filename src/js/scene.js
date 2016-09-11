@@ -1,7 +1,7 @@
 "use strict";
 
 function Scene() {
-  GameObject(this); //extend from game object.
+  GO(this); //extend from game object.
   this.entities = [];
   this.parent = null;
   var that = this;
@@ -19,7 +19,7 @@ function Scene() {
   });
 };
 
-Scene.prototype = Object.create(GameObject.prototype);
+Scene.prototype = Object.create(GO.prototype);
 Scene.prototype.constructor = Scene;
 
 Scene.prototype.addEntity = function(entity, zIndex){

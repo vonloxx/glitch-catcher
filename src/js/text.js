@@ -1,20 +1,17 @@
 "use strict";
 
-function Text(options) {
-  GameObject(this); //extend from game object.
+function T(options) {
+  GO(this); //extend from game object.
 
   this.x = options.x || 0;
   this.y = options.y || 0;
   this.text = options.text || 'No text';
   this.align = options.align || 'center';
   this.font = options.font || 'bold 24px "pulse"';
-  this.fillStyle = options.fillStyle || '#ffffff';
+  this.fillStyle = options.fillStyle || 'rgba(' + $palette[7] + ',1)';
   this.bounds = {};
 
   var that = this;
-
-  this.addListener('update', function(dt){
-  });
 
   this.addListener('render', function(){
     var ctx = that.ctx;
@@ -29,5 +26,5 @@ function Text(options) {
   });
 };
 
-Text.prototype = Object.create(GameObject.prototype);
-Text.prototype.constructor = Text;
+T.prototype = Object.create(GO.prototype);
+T.prototype.constructor = T;

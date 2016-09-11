@@ -12,7 +12,7 @@ function Game(options) {
   this.interval = null;
   this.stopped = true;
   this.mobile = "ontouchstart" in document;
-
+  this.requestedFullScreen = false;
   this.eventListeners = [];
 
   var that = this;
@@ -29,24 +29,49 @@ function Game(options) {
   if (this.mobile) {
     // For mobile.
     options.canvas.addEventListener("touchstart", function(e){
+      if (MOBILE) {
+        var docelem = document.documentElement;
+        if (!this.requestedFullScreen) {
+          if (docelem.requestFullscreen) {
+              docelem.requestFullscreen();
+          }
+          else if (docelem.mozRequestFullScreen) {
+              docelem.mozRequestFullScreen();
+          }
+          else if (docelem.webkitRequestFullscreen) {
+              docelem.webkitRequestFullscreen();
+          }
+          else if (docelem.msRequestFullscreen) {
+              docelem.msRequestFullscreen();
+          }
+        }
+      }
+
       callListeners('touchstart', e.touches[0]);
+      e.preventDefault();
     }, false);
     options.canvas.addEventListener("touchend", function(e){
       callListeners('touchend', e.touches[0]);
+      e.preventDefault();
     }, false);
     options.canvas.addEventListener("touchmove", function(e){
       callListeners('touchmove', e.touches[0]);
+      e.preventDefault();
     }, false);
   } else {
     // For desktop.
     options.canvas.addEventListener("mousedown", function(e){
       callListeners('mousedown', e);
+      console.log(e);
+      e.preventDefault();
     }, false);
     options.canvas.addEventListener("mouseup", function(e){
       callListeners('mouseup', e);
+      e.preventDefault();
     }, false);
     options.canvas.addEventListener("mousemove", function(e){
       callListeners('mousemove', e);
+      e.preventDefault();
     }, false);
   }
 
@@ -73,19 +98,16 @@ Game.prototype.run = function(){
     that.dt = (now - that.lastDelta) / 1000.0;
     that.ctx.clearRect(0, 0, that.width, that.height);
 
-    // that.ctx.beginPath();
-    // that.ctx.rect(0, 0, that.width, that.height);
-    // that.ctx.fillStyle = 'black';
-    // that.ctx.fill();
-
     that.update(that.dt);
     that.render();
 
-    that.ctx.textAlign = 'left';
-    that.ctx.fillStyle = 'white';
-    that.ctx.font = 'bold 12px "pulse"';
-    that.ctx.fillText('TIME ' + Math.round(that.t * 100) / 100, 1, that.height - 1);
-    that.ctx.fillText('DELTA ' + that.dt, 100, that.height - 1);
+    if (DEBUG) {
+      that.ctx.textAlign = 'left';
+      that.ctx.fillStyle = 'white';
+      that.ctx.font = 'bold 12px "pulse"';
+      that.ctx.fillText('TIME ' + Math.round(that.t * 100) / 100, 1, that.height - 1);
+      that.ctx.fillText('DELTA ' + that.dt, 100, that.height - 1);
+    }
 
     that.lastDelta = now;
     if (!that.stopped) {

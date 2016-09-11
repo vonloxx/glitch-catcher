@@ -5,17 +5,21 @@ function Boid(swarm, type) {
   this.x = Math.random() * 10 + (parseInt(Math.random() * 2) == 0?swarm.width - 10:0);
   this.y = Math.random() * 10 + (parseInt(Math.random() * 2) == 0?swarm.height - 10:0);
 
+  this.type = type || 'normal';
   this.radius = 6;
-  this.speed = (Math.random() * 1.5) + 0.5; //1;
+  this.speed = this.type=='normal'?(Math.random() * 1.5) + 0.5:2.2; //1;
   this.radialSpeed = Math.PI / 60;
   this.vision = 50;
   this.heading = Math.random() * 2 * Math.PI - Math.PI;
-  this.type = type || 'normal';
 }
 
 Boid.prototype.draw = function(ctx) {
     var pointLen = this.radius * 2.5;
-    ctx.fillStyle = this.type=='normal'?'green':'red';
+    ctx.fillStyle = 'rgba(' + $palette[4] + ',1)'; //this.type=='normal'?'#C7F464':'red';
+
+    if (this.type == 'alt') {
+      ctx.fillStyle = 'rgba(' + $palette[9] + ',1)';
+    }
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
     ctx.fill();
@@ -144,6 +148,7 @@ Swarm.prototype.createBoid = function(n, type) {
   var createdBoids = [];
   for (var i = 0; i < (n || 1); i++) {
     var boid = new Boid(this, type);
+    boid.parent = this;
     this.boids.push(boid);
     createdBoids.push(boid);
   }

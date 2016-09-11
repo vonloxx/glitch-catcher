@@ -4,6 +4,9 @@ menu.addListener('init', function(){
   menu.timer = 0;
 
   function startGame() {
+    //music.stop();
+    var player = menu.entities[0];
+    player.spawn();
     $.setActiveScene(1);
     $.removeEventListener(l1);
     $.removeEventListener(l2);
@@ -11,6 +14,22 @@ menu.addListener('init', function(){
 
   var l1 = $.addEventListener('touchstart', startGame);
   var l2 = $.addEventListener('mousedown', startGame);
+
+  var player = new Player({
+    x: game.parent.width / 2,
+    y: game.parent.height / 2,
+    demo: true,
+  });
+  menu.addEntity(player);
+
+  menu.swarm = new Swarm({
+    width: menu.parent.width,
+    height: menu.parent.height,
+  });
+  menu.swarm.createBoid(1, 'alt');
+
+  menu.addEntity(menu.swarm);
+
 
   menu.introTexts = [
     {
@@ -26,39 +45,27 @@ menu.addListener('init', function(){
       text: 'AND TO ARM THE PULSE',
     },
     {
-      queue: [14,18],
+      queue: [9,13],
       text: 'RELEASE TO TRIGGER IT!',
     },
     {
-      queue: [19,22],
+      queue: [14,18],
       text: 'AFTER RELEASING THE PULSE',
     },
     {
-      queue: [22,25],
+      queue: [18,22],
       text: 'PLACE YOURSELF ABOVE',
     },
     {
-      queue: [25,28],
+      queue: [22,26],
       text: 'THE ENEMIES TO DESTROY THEM',
     },
     {
-      queue: [30,35],
+      queue: [28,34],
       text: 'GOOD LUCK!',
     },
   ];
 });
-
-// menu.addListener('touchstart', function(e){
-//   if ($.activeScene == 0) {
-//     $.setActiveScene(1);
-//   }
-// });
-//
-// menu.addListener('mouseup', function(e){
-//   if ($.activeScene == 0) {
-//     $.setActiveScene(1);
-//   }
-// });
 
 menu.addListener('render', function(ctx){
   // ctx.beginPath();
@@ -72,8 +79,8 @@ menu.addListener('render', function(ctx){
   ctx.translate($.width / 2, 100);
   ctx.scale(scale, scale);
 
-  ctx.shadowBlur = scale * 100;
-  ctx.shadowColor = 'rgba(0, 216, 255, 0.2)';
+  ctx.shadowBlur = 100;
+  ctx.shadowColor = 'rgba(' + $palette[3] + ', 0.4)';
 
   ctx.fillStyle = 'rgba(255, 255, 255, 1)';
   ctx.textAlign = 'center';
@@ -84,7 +91,7 @@ menu.addListener('render', function(ctx){
   ctx.fillText('PULSE', -2, 42);
   ctx.fillText('PULSE', 2, 42);
 
-  ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+  ctx.fillStyle = 'rgb(' + $palette[0] + ')';
   ctx.font = 'bold 120px "pulse"';
   ctx.textAlign = 'center';
   ctx.fillText('PULSE', 0, 40);
@@ -93,19 +100,57 @@ menu.addListener('render', function(ctx){
 
   menu.introTexts.forEach(function(help){
     if (menu.timer > help.queue[0] && menu.timer < help.queue[1]) {
-      ctx.fillStyle = 'white';
+      ctx.fillStyle = 'rgba(' + $palette[8] + ',1)';
       ctx.font = 'bold 24px "pulse"';
       ctx.textAlign = 'center';
-      ctx.fillText(help.text, menu.parent.width / 2, menu.parent.height / 2 - 80);
+      ctx.fillText(help.text, menu.parent.width / 2, menu.parent.height / 2 + 80);
     }
   });
 
-  ctx.fillStyle = 'white';
+  ctx.fillStyle = 'rgba(' + $palette[7] + ',1)';
+  ctx.font = 'bold 16px "pulse"';
+  ctx.textAlign = 'center';
+  ctx.fillText('WATCH OUT FOR THE GLITCH', $.width / 2, $.height / 2 + 120);
+  ctx.fillText('IT IS FRIENDLY', $.width / 2, $.height / 2 + 135);
+  ctx.fillText('BUT MESSES WITH YOUR PULSE SCORE', $.width / 2, $.height / 2 + 150);
+  ctx.fillText('WHEN HITTING IT', $.width / 2, $.height / 2 + 165);
+
+  ctx.fillStyle = 'rgba(' + $palette[8] + ',1)';
   ctx.font = 'bold 24px "pulse"';
   ctx.textAlign = 'center';
-  ctx.fillText('TOUCH TO START', $.width / 2, $.height - 80);
+  ctx.fillText('TOUCH TO START', $.width / 2, $.height - 20);
 });
 
 menu.addListener('update', function(dt){
   menu.timer += dt * 2;
+
+  menu.swarm.boids[0].x = menu.parent.width / 2 + 130;
+  menu.swarm.boids[0].y = menu.parent.height / 2 + 115;
+
+  var player = menu.entities[0];
+  player.canMove = true;
+
+  if (menu.timer > 4 && menu.timer < 5) {
+    player.move(game.parent.width / 2 - 50, game.parent.height / 2 - 20);
+  }
+
+  if (menu.timer > 5 && menu.timer < 6) {
+    player.move(game.parent.width / 2 + 50, game.parent.height / 2 - 20);
+  }
+
+  if (menu.timer > 6 && menu.timer < 7) {
+    player.move(game.parent.width / 2, game.parent.height / 2);
+  }
+
+  if (menu.timer > 5 && menu.timer < 6 && player.empState === 0) {
+    player.armEMP();
+  }
+
+  if (menu.timer > 9 && menu.timer < 10 && player.empState === 1) {
+    player.releaseEMP();
+  }
+
+  if (menu.timer > 35) {
+    menu.timer = 0;
+  }
 });
