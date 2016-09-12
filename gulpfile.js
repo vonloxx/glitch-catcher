@@ -34,7 +34,17 @@ var gulp          = require('gulp'),
             'src/css/*.css',
         ],
         js: [
-            'src/js/*.js'
+            'src/js/game-object.js',
+            'src/js/boids.js',
+            'src/js/particle.js',
+            'src/js/explosion.js',
+            'src/js/text.js',
+            'src/js/player.js',
+            'src/js/scene.js',
+            'src/js/game.js',
+            'src/js/scene-menu.js',
+            'src/js/scene-game.js',
+            'src/js/z-run.js',
         ],
         mainHtml: [
             'src/index.html'
