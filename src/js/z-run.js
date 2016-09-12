@@ -9,7 +9,7 @@ if (window.innerHeight > 768) {
 var $;
 var DEBUG = false;
 
-//Christina
+//Christina - http://www.colourlovers.com/palette/2562636/Christina
 var $palette = [
   '78,57,93',     // 0 background and title
   '142,190,148',  // 1 player
