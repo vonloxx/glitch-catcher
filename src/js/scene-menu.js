@@ -75,6 +75,12 @@ menu.addListener('render', function(ctx){
 
   var scale = (Math.abs(Math.cos(menu.timer)) / 2) / 3 + 0.7;
 
+  ctx.fillStyle = 'rgba(' + $palette[7] + ',1)';
+  ctx.font = 'bold 16px "pulse"';
+  ctx.textAlign = 'center';
+  ctx.fillText('A GAME BY MARCO FERNANDES', $.width / 2, 30);
+  ctx.fillText('twitter.com/marcoffernandes', $.width / 2, 45);
+
   ctx.save();
   ctx.translate($.width / 2, 100);
   ctx.scale(scale, scale);
