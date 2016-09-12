@@ -139,6 +139,11 @@ game.addListener('init', function(){
     if (boid.type == 'alt') {
       return;
     }
+
+    if (player.dying) {
+      return;
+    }
+
     player.die(
       function(player) {
         if (player.lives <= 0) {
@@ -166,18 +171,20 @@ game.addListener('init', function(){
           });
           game.addEntity(text1);
 
-            var text11 = new T({
-              x: game.parent.width / 2,
-              y: game.parent.height / 2 - 70,
-              font: '14px "pulse"',
-              fillStyle: 'rgba(' + $palette[8] + ',1)',
-              text: '\u2605 NEW HI-SCORE \u2605',
-            });
-            if (!isHiScore) {
-              text11.text = 'HI-SCORE: ' + hiScore;
-            }
-            game.addEntity(text11);
+          var text11 = new T({
+            x: game.parent.width / 2,
+            y: game.parent.height / 2 - 70,
+            font: '14px "pulse"',
+            fillStyle: 'rgba(' + $palette[8] + ',1)',
+            text: '\u2605 NEW HI-SCORE \u2605',
+            //text: 'NEW HI-SCORE',
+          });
 
+          if (!isHiScore) {
+            text11.text = 'HI-SCORE: ' + hiScore;
+          }
+
+          game.addEntity(text11);
 
           var text2 = new T({
             x: game.parent.width / 2,
