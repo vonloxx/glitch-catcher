@@ -23,27 +23,25 @@ var $palette = [
   '142,190,148',  // 9 alt boid
 ];
 
-document.addEventListener('DOMContentLoaded', function(){
-    $ = new Game({
-      canvas: document.getElementById('canvas'),
-      width: WIDTH, //window.innerWidth,
-      height: HEIGHT, //window.innerHeight,
-    });
+window.addEventListener('load', function(){
+  $ = new Game({
+    canvas: document.getElementById('canvas'),
+    width: WIDTH, //window.innerWidth,
+    height: HEIGHT, //window.innerHeight,
+  });
 
-    document.getElementById('canvas').style.display = 'block';
-    document.getElementById('loading').style.display = 'none';
+  document.getElementById('canvas').style.display = 'block';
+  document.getElementById('loading').style.display = 'none';
 
-    // Setup menu scene - from scene-menu.js.
-    $.addScene(menu);
+  // Setup menu scene - from scene-menu.js.
+  $.addScene(menu);
 
-    // Setup game scene - from scene-game.js.
-    $.addScene(game);
+  // Setup game scene - from scene-game.js.
+  $.addScene(game);
 
-    $.setActiveScene(0);
+  $.setActiveScene(0);
 
-    $.run();
-    console.log(document.getElementById('canvas').style);
-
+  $.run();
 });
 
 window.addEventListener('resize', function(){
