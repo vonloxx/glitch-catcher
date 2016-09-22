@@ -1,6 +1,6 @@
 # PULSE - My JS13K 2016 entry
 
-## Making-of
+## Post mortem
 
 Last year when I developed about 60% of my game, I inadvertently formatted my Mac and had no commits pulled to the repository. So I was unable to submit my entry due the lack of time to remake the whole game. Big lesson here kids, always use a version control as a backup and frequently pull your code to the remote rep. You'll never know when you're going to screw things up. ;)
 But I learned a lot about JS/HTML game development and it was fun (while it lasted). So I decided to enter at 2016's edition.
@@ -31,7 +31,7 @@ As a result of the tests, I had to differentiate some vars on the mobile and des
 
 Tests and consequent code tweaks took more time than I expected. And after that I finally realized that the chosen architecture did took a lot of valuable bytes not leaving enough for, at least, sound effects. Did a code re-factor but without stepping out of the original architecture. More time spent. Soon I was on the last weekend before the deadline.
 
-I was still missing better graphics and sound but no time. So I just grabbed a nice palette from http://www.colourlovers.com/palette/2562636/Christina, added a simple particles explosion (http://www.gameplaypassion.com/blog/explosion-effect-html5-canvas/) for the player, chose a small font http://www.dafont.com/pt/bitmap.php and submitted the game.
+I was still missing better graphics and sound but no time. So I just grabbed a nice palette from http://www.colourlovers.com/palette/2562636/Christina, added a simple particle explosion (http://www.gameplaypassion.com/blog/explosion-effect-html5-canvas/) for the player, chose a small font http://www.dafont.com/pt/bitmap.php and submitted the game.
 
 Nowadays I really regret not taking some time from my sleep to include some sounds and some web-gl filter which I believe it would give the game a better experience but I'm really proud of the result. Especially considering that this was my last completed game in +20 years! Yeah, I'm that old. My last completed game was a platformer written in Turbo Pascal for MS-DOS 😎.
 
